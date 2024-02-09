@@ -89,3 +89,9 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int sys_christian(void)
+{
+    printf("Christian Fredrik Johnsen\n");
+    return 0;
+}
