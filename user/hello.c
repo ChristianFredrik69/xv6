@@ -1,6 +1,6 @@
-#include "types.h"
-#include "user.h"
-#include "stat.h"
+#include "kernel/types.h"
+#include "user/user.h"
+#include "kernel/stat.h"
 
 
 

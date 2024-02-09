@@ -5,8 +5,8 @@ user/_hello:     file format elf64-littleriscv
 Disassembly of section .text:
 
 0000000000000000 <main>:
-#include "user.h"
-#include "stat.h"
+#include "user/user.h"
+#include "kernel/stat.h"
 
 
 
