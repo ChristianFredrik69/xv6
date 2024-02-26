@@ -165,6 +165,11 @@ void kerneltrap()
 void clockintr()
 {
     acquire(&tickslock);
+    struct proc *p = myproc();
+    if (p){
+        printf("Pungskur\n");
+        p->ticks_in_level++;
+    }
     ticks++;
     wakeup(&ticks);
     release(&tickslock);

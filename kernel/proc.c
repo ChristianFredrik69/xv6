@@ -72,6 +72,9 @@ void procinit(void)
         initlock(&p->lock, "proc");
         p->state = UNUSED;
         p->kstack = KSTACK((int)(p - proc));
+        p->priority = 0; // Highest priority is 0
+        p->ticks_in_level = 0;
+        p->wait_ticks = 0;
     }
 }
 
@@ -564,6 +567,7 @@ void rr_scheduler(void)
     struct cpu *c = mycpu();
 
     c->proc = 0;
+    
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
@@ -589,35 +593,29 @@ void rr_scheduler(void)
     // Round Robin round has completed.
 }
 
-void mlfq_scheduler(void) // Currently, we are using a copy of the Round Robin scheduler
-{
+void mlfq_scheduler(void) {
     struct proc *p;
     struct cpu *c = mycpu();
 
+    int NUM_LEVELS = 2;
     c->proc = 0;
-    // Avoid deadlock by ensuring that devices can interrupt.
+    
     intr_on();
 
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-        acquire(&p->lock);
-        if (p->state == RUNNABLE)
-        {
-            // Switch to chosen process.  It is the process's job
-            // to release its lock and then reacquire it
-            // before jumping back to us.
-            p->state = RUNNING;
-            c->proc = p;
-            swtch(&c->context, &p->context);
-
-            // Process is done running for now.
-            // It should have changed its p->state before coming back.
-            c->proc = 0;
+    for(int level = 0; level < NUM_LEVELS; level++) {
+        for(p = proc; p < &proc[NPROC]; p++) {
+            acquire(&p->lock);
+            if(p->state == RUNNABLE && p->priority == level) {
+                
+                p->state = RUNNING;
+                c->proc = p;
+                swtch(&c->context, &p->context);
+                
+                c->proc = 0;
+            }
+            release(&p->lock);
         }
-        release(&p->lock);
     }
-    // In case a setsched happened, we will switch to the new scheduler after one
-    // Round Robin round has completed.
 }
 
 
