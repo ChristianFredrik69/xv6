@@ -597,12 +597,10 @@ void mlfq_scheduler(void) {
     struct proc *p;
     struct cpu *c = mycpu();
 
-    int NUM_LEVELS = 2;
-    c->proc = 0;
-    
-    intr_on();
+    c->proc = 0; // Set the current process to 0
+    intr_on(); // Enable interrupts
 
-    for(int level = 0; level < NUM_LEVELS; level++) {
+    for(int level = 0; level < NUM_LEVELS; level++) { // NUM_LEVELS is defined in param.h
         for(p = proc; p < &proc[NPROC]; p++) {
             acquire(&p->lock);
             if(p->state == RUNNABLE && p->priority == level) {
