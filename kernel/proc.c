@@ -836,3 +836,39 @@ void schedset(int id)
     sched_pointer = available_schedulers[id].impl;
     printf("Scheduler successfully changed to %s\n", available_schedulers[id].name);
 }
+
+
+uint64 va2pa(uint64 addr, int pid)
+{
+    struct proc *p;
+    if (pid == 0)
+    {
+        p = myproc();
+    }
+    else
+    {
+        for (p = proc; p < &proc[NPROC]; p++)
+        {
+            if (p->pid == pid)
+            {
+                break;
+            }
+        }
+    }
+    if (p == 0)
+    {
+        printf("Process not found\n");
+        return -1;
+    }
+    if (addr < p->sz)
+    {
+        printf("Virtual address: %p\n", addr);
+        printf("Physical address: %p\n", walkaddr(p->pagetable, addr));
+    }
+    else
+    {
+        printf("Virtual address out of range\n");
+    }
+
+    return 0;
+}

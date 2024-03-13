@@ -117,9 +117,9 @@ uint64 sys_schedset(void)
     return 0;
 }
 
-uint64 sys_va2pa(void)
+uint64 sys_va2pa(uint64 addr, int pid)
 {
-    printf("TODO: IMPLEMENT ME [%s@%s (line %d)]", __func__, __FILE__, __LINE__);
+    va2pa(addr, pid);
     return 0;
 }
 
