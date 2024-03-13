@@ -853,6 +853,5 @@ uint64 va2pa(uint64 addr, int pid)
         return 0;
     }
 
-    printf("%p\n", walkaddr(p->pagetable, addr)); // Process found, print the physical address.
-    return 0;
+    return walkaddr(p->pagetable, addr);
 }

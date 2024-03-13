@@ -127,8 +127,7 @@ uint64 sys_va2pa(void)
     int pid;
     argint(1, &pid); // Get the second argument, the process id
     
-    va2pa(addr, pid);
-    return 0;
+    return va2pa(addr, pid);
 }
 
 uint64 sys_pfreepages(void)
