@@ -117,8 +117,16 @@ uint64 sys_schedset(void)
     return 0;
 }
 
-uint64 sys_va2pa(uint64 addr, int pid)
-{
+
+// Can't have arguments
+uint64 sys_va2pa(void)
+{   
+    uint64 addr;
+    argaddr(0, &addr); // Get the first argument, the virtual address
+    
+    int pid;
+    argint(1, &pid); // Get the second argument, the process id
+    
     va2pa(addr, pid);
     return 0;
 }

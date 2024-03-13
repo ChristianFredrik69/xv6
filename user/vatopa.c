@@ -2,13 +2,12 @@
 #include "user/user.h"
 #include "kernel/stat.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[]) {
     
     if (argc == 1) {
-        fprintf(2, "Usage: vatopa <virtual address> [PID]\n");
-        exit(1);
+        printf("Usage: vatopa virtual_address [pid]\n");
+        return 0;
     }
-
     
     uint64 va = (uint64) atoi(argv[1]);
 
@@ -20,6 +19,4 @@ int main(int argc, char **argv) {
         int pid = atoi(argv[2]);
         return va2pa(va, pid);
     }
-
-    return 0;
 }

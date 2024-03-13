@@ -841,34 +841,18 @@ void schedset(int id)
 uint64 va2pa(uint64 addr, int pid)
 {
     struct proc *p;
-    if (pid == 0)
-    {
-        p = myproc();
-    }
-    else
-    {
-        for (p = proc; p < &proc[NPROC]; p++)
-        {
-            if (p->pid == pid)
-            {
-                break;
-            }
+    
+    for (p = proc; p < &proc[NPROC]; p++) { // find the process
+        if (p->pid == pid) {
+            break;
         }
     }
-    if (p == 0)
-    {
-        printf("Process not found\n");
-        return -1;
-    }
-    if (addr < p->sz)
-    {
-        printf("Virtual address: %p\n", addr);
-        printf("Physical address: %p\n", walkaddr(p->pagetable, addr));
-    }
-    else
-    {
-        printf("Virtual address out of range\n");
+
+    if (p->pid != pid) {
+        printf("Process ID: %d\nNot found!\n", pid);
+        return 0;
     }
 
+    printf("%p\n", walkaddr(p->pagetable, addr)); // Process found, print the physical address.
     return 0;
 }
