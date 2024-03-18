@@ -25,7 +25,6 @@ int main() {
 
     printf("Array address: %p\n", array);
     printf("Integer value: %d\n", *point);
-
-
+    
     return 0;
 }
