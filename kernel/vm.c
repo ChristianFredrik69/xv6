@@ -306,7 +306,6 @@ int
 uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 {
   pte_t *pte;
-  char *mem;
   uint64 i;
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
@@ -317,14 +316,20 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     printf("End: %p", end);
     printf("pa_index: %d\n", PA_INDEX(pa));
     printf("NUM_REFS: %d\n", NUM_REFS[PA_INDEX(pa)]);
+    NUM_REFS[PA_INDEX(pa)]++; // Increment the reference count
     uint flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto err;
-    memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
-      goto err;
+    flags &= ~PTE_W; // Remove write permission
+    flags |= PTE_R; // Add read permission
+    if (mappages(new, i, PGSIZE, pa, flags) != 0) { // Map the page to the exact same location as the parent. Flags are different, child may only read.
+        goto err;
     }
+
+    printf("NUM_REFS: %d\n", NUM_REFS[PA_INDEX(pa)]); // debugz
+    // Update: We are getting scause 0x0...0f, which is what we want.
+    // I think this is good, since it means that the problem is (hopefully) only that we are trying to
+    // write to a read-only page. In the best case scenario, we only need to implement copy-on-write,
+    // when scause 15 is encountered, and we are done.
+    // Realistically, there will probably be more problems, but this is a good start.
   }
   return 0;
 
