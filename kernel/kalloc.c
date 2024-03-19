@@ -9,38 +9,55 @@
 #include "riscv.h"
 #include "defs.h"
 
-uint64 MAX_PAGES = 0;
-uint64 FREE_PAGES = 0;
+/*
+PERSONAL COMMENTS:
 
+PGSIZE is defined in riscv.h as 4096
+This means that we have 4096 bytes per page. 4096 = 2**12
+
+XV6 uses 32-bit addressing, so we have 2**32 addresses
+2**32 / 2**12 = 2**20, meaning we have 2**20 pages -> The first 20 bits of the address specifies the page number
+2**20 = 1048576 different pages at most.
+*/
+
+uint64 MAX_PAGES = 0; // Maximum number of pages is dynamically set when booting the kernel. Depends on the amount of physical memory available and the amount of memory reserved for the kernel.
+uint64 FREE_PAGES = 0; // We dynamically keep track of the number of free pages.
 void freerange(void *pa_start, void *pa_end);
+extern char end[]; // first address after kernel, defined by kernel.ld
 
-extern char end[]; // first address after kernel.
-                   // defined by kernel.ld.
-
-struct run
-{
+/*
+A run is a free block of memory.
+The entire structure is a singly linked list. Each run instance points to the next free page.
+*/
+struct run { // A run is a free block of memory
     struct run *next;
 };
 
-struct
-{
-    struct spinlock lock;
-    struct run *freelist;
+/*
+A structure which manages the pool of free memory pages.
+We only need one instance of this structure, thus the struct is anonymous.
+*/
+struct {
+    struct spinlock lock; // The lock is used to ensure exclusive access to the freelist
+    struct run *freelist; // The linked list of free pages
 } kmem;
 
-void kinit()
-{
-    initlock(&kmem.lock, "kmem");
-    freerange(end, (void *)PHYSTOP);
-    MAX_PAGES = FREE_PAGES;
+/*
+I don't know the specifics, but this is used when booting the kernel.
+*/
+void kinit() {
+    initlock(&kmem.lock, "kmem"); // Set up the lock for the freelist
+    freerange(end, (void *)PHYSTOP); // Free all pages between the end of the kernel and the end of physical memory
+    MAX_PAGES = FREE_PAGES; // The maximum number of pages is set to the number of free pages after booting the kernel
 }
 
-void freerange(void *pa_start, void *pa_end)
-{
-    char *p;
-    p = (char *)PGROUNDUP((uint64)pa_start);
-    for (; p + PGSIZE <= (char *)pa_end; p += PGSIZE)
-    {
+/*
+Frees all pages between pa_start and pa_end.
+Uses kfree as sub-routine.
+*/
+void freerange(void *pa_start, void *pa_end) {
+    char *p = (char *)PGROUNDUP((uint64)pa_start); // Rounds up the start address to the next page boundary
+    for (; p + PGSIZE <= (char *)pa_end; p += PGSIZE) { // Free all pages between pa_start and pa_end
         kfree(p);
     }
 }
@@ -49,44 +66,44 @@ void freerange(void *pa_start, void *pa_end)
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
-void kfree(void *pa)
-{
-    if (MAX_PAGES != 0)
+void kfree(void *pa) {
+    if (MAX_PAGES != 0) // sanity check, you cannot have more free pages than the maximum number of pages
         assert(FREE_PAGES < MAX_PAGES);
-    struct run *r;
 
-    if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end || (uint64)pa >= PHYSTOP)
+    if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end || (uint64)pa >= PHYSTOP) // Check if the address is valid
         panic("kfree");
 
-    // Fill with junk to catch dangling refs.
-    memset(pa, 1, PGSIZE);
+    memset(pa, 1, PGSIZE); // fill with junk (the value 1 is inserted in each byte of the page)
+    struct run *r = (struct run *)pa; // The address of the page is casted to a run pointer, each free page is a run.
 
-    r = (struct run *)pa;
+    acquire(&kmem.lock); // Ensure exclusive access to the freelist
 
-    acquire(&kmem.lock);
-    r->next = kmem.freelist;
-    kmem.freelist = r;
-    FREE_PAGES++;
-    release(&kmem.lock);
+    r->next = kmem.freelist; // Fix the next pointer of the free page to point to the current run at the head of the freelist
+    kmem.freelist = r; // Insert the current run at the head of the freelist
+    FREE_PAGES++; // We have successfully freed a page, so we increment the number of free pages
+    
+    release(&kmem.lock); // Release the lock, making the freelist available to other threads
 }
 
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
 void *
-kalloc(void)
-{
-    assert(FREE_PAGES > 0);
-    struct run *r;
+kalloc(void) {
+    /*
+    I must say that these if(r) checks should not be necessary.
+    You are already checking that number of free pages is greater than 0.
+    It is beyond me how you could have a free page without a run.
+    */
+    assert(FREE_PAGES > 0); // sanity check, you cannot allocate a page if there are no free pages
+    acquire(&kmem.lock); // Ensure that you are the only one accessing the freelist
+    struct run *r = kmem.freelist; // Get the first run in the freelist
+    if (r) // If the freelist is not empty
+        kmem.freelist = r->next; // Update the head of the freelist to point to the next run
+    release(&kmem.lock); // Release the lock, making the freelist available to other threads
 
-    acquire(&kmem.lock);
-    r = kmem.freelist;
-    if (r)
-        kmem.freelist = r->next;
-    release(&kmem.lock);
-
-    if (r)
+    if (r) // If the freelist is not empty 
         memset((char *)r, 5, PGSIZE); // fill with junk
-    FREE_PAGES--;
-    return (void *)r;
+    FREE_PAGES--; // Decrement the number of free pages
+    return (void *)r; // Return a pointer to the allocated page
 }
