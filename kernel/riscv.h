@@ -327,8 +327,10 @@ sfence_vma()
   asm volatile("sfence.vma zero, zero");
 }
 
-typedef uint64 pte_t;
-typedef uint64 *pagetable_t; // 512 PTEs
+typedef uint64 pte_t; // 8 bytes per page table entry and 4096 bytes per page. 4096 / 8 = 512
+typedef uint64 *pagetable_t; // 512 PTEs. PTE = Page Table Entry. 
+extern uint64 NUM_REFS[33000];
+extern char end[]; // first address after kernel, defined by kernel.ld
 
 #endif // __ASSEMBLER__
 
@@ -344,10 +346,14 @@ typedef uint64 *pagetable_t; // 512 PTEs
 #define PTE_X (1L << 3)
 #define PTE_U (1L << 4) // user can access
 
+
+
 // shift a physical address to the right place for a PTE.
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
 
 #define PTE2PA(pte) (((pte) >> 10) << 12)
+
+#define PA_INDEX(pa) ((((uint64)pa) - *end) >> 12)
 
 #define PTE_FLAGS(pte) ((pte) & 0x3FF)
 

@@ -306,17 +306,18 @@ int
 uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 {
   pte_t *pte;
-  uint64 pa, i;
-  uint flags;
   char *mem;
-
+  uint64 i;
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
       panic("uvmcopy: pte should exist");
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
-    pa = PTE2PA(*pte);
-    flags = PTE_FLAGS(*pte);
+    uint64 pa = PTE2PA(*pte);
+    printf("End: %p", end);
+    printf("pa_index: %d\n", PA_INDEX(pa));
+    printf("NUM_REFS: %d\n", NUM_REFS[PA_INDEX(pa)]);
+    uint flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
       goto err;
     memmove(mem, (char*)pa, PGSIZE);
