@@ -9,8 +9,7 @@
 #include "defs.h"
 
 void
-initlock(struct spinlock *lk, char *name)
-{
+initlock(struct spinlock *lk, char *name) {
   lk->name = name;
   lk->locked = 0;
   lk->cpu = 0;
@@ -19,8 +18,7 @@ initlock(struct spinlock *lk, char *name)
 // Acquire the lock.
 // Loops (spins) until the lock is acquired.
 void
-acquire(struct spinlock *lk)
-{
+acquire(struct spinlock *lk) {
   push_off(); // disable interrupts to avoid deadlock.
   if(holding(lk))
     panic("acquire");
@@ -36,7 +34,7 @@ acquire(struct spinlock *lk)
   // past this point, to ensure that the critical section's memory
   // references happen strictly after the lock is acquired.
   // On RISC-V, this emits a fence instruction.
-  __sync_synchronize();
+  __sync_synchronize(); // Personal comment: Wait until all previous instructions have been executed.
 
   // Record info about lock acquisition for holding() and debugging.
   lk->cpu = mycpu();
@@ -44,8 +42,7 @@ acquire(struct spinlock *lk)
 
 // Release the lock.
 void
-release(struct spinlock *lk)
-{
+release(struct spinlock *lk) {
   if(!holding(lk))
     panic("release");
 
@@ -68,17 +65,14 @@ release(struct spinlock *lk)
   //   amoswap.w zero, zero, (s1)
   __sync_lock_release(&lk->locked);
 
-  pop_off();
+  pop_off(); // re-enable interrupts.
 }
 
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
 int
-holding(struct spinlock *lk)
-{
-  int r;
-  r = (lk->locked && lk->cpu == mycpu());
-  return r;
+holding(struct spinlock *lk) {
+  return (int) (lk->locked && lk->cpu == mycpu());
 }
 
 // push_off/pop_off are like intr_off()/intr_on() except that they are matched:
@@ -86,8 +80,7 @@ holding(struct spinlock *lk)
 // are initially off, then push_off, pop_off leaves them off.
 
 void
-push_off(void)
-{
+push_off(void) { // disable interrupts.
   int old = intr_get();
 
   intr_off();
@@ -97,8 +90,7 @@ push_off(void)
 }
 
 void
-pop_off(void)
-{
+pop_off(void) { // re-enable interrupts.
   struct cpu *c = mycpu();
   if(intr_get())
     panic("pop_off - interruptible");
