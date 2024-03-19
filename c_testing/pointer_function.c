@@ -20,6 +20,7 @@ struct Range {
 void pointer_function(short *pointer);
 void struct_function(struct Range range);
 void struct_function_pointer(struct Range *range);
+void null_pointer(struct Range *range);
 
 int main() {
 
@@ -29,6 +30,9 @@ int main() {
     struct Range myRange = {1, 10};
     struct_function(myRange);
     struct_function_pointer(&myRange);
+
+    struct Range uninitialized;
+    null_pointer(&uninitialized);
 
     return 0;
 
@@ -56,4 +60,28 @@ void struct_function(struct Range range) {
     printf("End: %hd\n", range.end);
     printf("Address: %p\n", &range);
     printf("\n");
+}
+
+void null_pointer(struct Range *range) {
+
+    struct Range bernard = *range;
+
+    // Illegal operation
+    // if(*range) {
+    //     printf("Not null\n");
+    // } else {
+    //     printf("Null\n");
+    // }
+
+    if (range) {
+        printf("Not null\n");
+    } else {
+        printf("Null\n");
+    }
+
+    if (range->end) {
+        printf("Not null\n");
+    } else {
+        printf("Null\n");
+    }
 }
