@@ -320,6 +320,10 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     uint flags = PTE_FLAGS(*pte);
     flags &= ~PTE_W; // Remove write permission
     flags |= PTE_R; // Add read permission
+
+    *pte = PA2PTE(pa) & ~PTE_W; // Update flags of the parent page table
+    *pte = PA2PTE(pa) | PTE_R;
+
     if (mappages(new, i, PGSIZE, pa, flags) != 0) { // Map the page to the exact same location as the parent. Flags are different, child may only read.
         goto err;
     }
