@@ -50,7 +50,7 @@ void kinit() {
     initlock(&kmem.lock, "kmem"); // Set up the lock for the freelist
     char *p = (char *)PGROUNDUP((uint64)end); // Rounds up the start address to the next page boundary
     for (; p + PGSIZE <= (char *)(void *)PHYSTOP; p += PGSIZE) { // Free all pages between pa_start and pa_end
-        NUM_REFS[((uint64)p - *end) >> 12] = 1; // Stupid workaround, else the reference counts become -1 after booting the kernel
+        NUM_REFS[PA_INDEX((uint64) p)] = 1; // Stupid workaround, else the reference counts become -1 after booting the kernel
     }
     freerange(end, (void *)PHYSTOP); // Free all pages between the end of the kernel and the end of physical memory
     
@@ -77,10 +77,11 @@ void kfree(void *pa) {
     if (MAX_PAGES != 0) // sanity check, you cannot have more free pages than the maximum number of pages
         assert(FREE_PAGES < MAX_PAGES);
 
-    if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end || (uint64)pa >= PHYSTOP || NUM_REFS[((uint64)pa - *end) >> 12] == 0) // Check if the address is valid
+    // printf("Reference count of index %d: %d\n", PA_INDEX((uint64) pa), NUM_REFS[PA_INDEX((uint64) pa)]);
+    if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end || (uint64)pa >= PHYSTOP || NUM_REFS[PA_INDEX((uint64) pa)] == 0) // Check if the address is valid
         panic("kfree");
     
-    if (--NUM_REFS[(uint64)pa >> 12] > 0) // Decrement the reference count, and if the reference count is greater than 0, the page is still in use.
+    if (--NUM_REFS[PA_INDEX((uint64) pa)] > 0) // Decrement the reference count, and if the reference count is greater than 0, the page is still in use.
         return;
     
     // Reference count is 0 -> Free the page.
@@ -115,12 +116,15 @@ kalloc(void) {
 
     if (r) { // If the freelist is not empty 
         memset((char *)r, 5, PGSIZE); // fill with junk
-        NUM_REFS[((uint64)r - *end) >> 12]++; // Increment the reference count of the page. RSHIFT 12 is the same as dividing by 4096 and then taking the floor.
+        NUM_REFS[PA_INDEX((uint64) r)]++; // Increment the reference count of the page. RSHIFT 12 is the same as dividing by 4096 and then taking the floor.
     }
     FREE_PAGES--; // Decrement the number of free pages
     return (void *)r; // Return a pointer to the allocated page
 }
 
+uint64 PA_INDEX(uint64 pa) {
+    return ((uint64)pa - KERNBASE) >> 12;
+}
 
 /*
 On kalloc,

@@ -83,7 +83,7 @@ kvminithart()
 //   12..20 -- 9 bits of level-0 index.
 //    0..11 -- 12 bits of byte offset within the page.
 pte_t *
-walk(pagetable_t pagetable, uint64 va, int alloc)
+walk(pagetable_t pagetable, uint64 va, int alloc) // Use alloc = 0 when looking up a page table entry, and alloc = 1 when creating a new page table entry
 {
   if(va >= MAXVA)
     panic("walk");
@@ -313,14 +313,20 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
     uint64 pa = PTE2PA(*pte);
-    printf("End: %p", end);
-    printf("pa_index: %d\n", PA_INDEX(pa));
+    printf("pa: %p, index: %d\n", pa, PA_INDEX(pa));
     printf("NUM_REFS: %d\n", NUM_REFS[PA_INDEX(pa)]);
     NUM_REFS[PA_INDEX(pa)]++; // Increment the reference count
+    
     uint flags = PTE_FLAGS(*pte);
-    flags &= ~PTE_W; // Remove write permission
-    flags |= PTE_R; // Add read permission
+    flags |= PTE_COW;
+    flags &= (~PTE_W);
+
     if (mappages(new, i, PGSIZE, pa, flags) != 0) { // Map the page to the exact same location as the parent. Flags are different, child may only read.
+        goto err;
+    }
+
+    uvmunmap(old, i, 1, 0); // Unmap
+    if (mappages(old, i, PGSIZE, pa, flags) != 0) { // Give the parent read-only permissions.
         goto err;
     }
 

@@ -45,3 +45,5 @@ Each PTE typically contains:
   - `PTE_W` (writable)
   - `PTE_X` (executable)
   - `PTE_U` (user accessible)
+
+Vatopa: if 0 argument, then use myproc.

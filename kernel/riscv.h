@@ -345,6 +345,7 @@ extern char end[]; // first address after kernel, defined by kernel.ld
 #define PTE_W (1L << 2)
 #define PTE_X (1L << 3)
 #define PTE_U (1L << 4) // user can access
+#define PTE_COW (1L << 5) // copy on write
 
 
 
@@ -353,7 +354,10 @@ extern char end[]; // first address after kernel, defined by kernel.ld
 
 #define PTE2PA(pte) (((pte) >> 10) << 12)
 
-#define PA_INDEX(pa) ((((uint64)pa) - *end) >> 12)
+
+// #define PA_INDEX(pa) (((uint64) pa - KERNBASE) / 4096)
+
+// #define PA_INDEX(pa) ((((uint64)pa) - *end) >> 12)
 
 #define PTE_FLAGS(pte) ((pte) & 0x3FF)
 
