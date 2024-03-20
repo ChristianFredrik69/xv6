@@ -838,9 +838,8 @@ uint64 va2pa(uint64 addr, int pid)
         }
     }
 
-    if (p->pid != pid) {
-        printf("Process ID: %d\nNot found!\n", pid);
-        return 0;
+    if (pid == 0) {
+        p = myproc();
     }
 
     return walkaddr(p->pagetable, addr);
