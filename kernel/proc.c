@@ -251,7 +251,7 @@ static void
 freeproc(struct proc *p)
 {
     if (p->trapframe)
-        dec_ref((void *)p->trapframe);
+        decrement_reference_count_for_physical_address((void *)p->trapframe);
     p->trapframe = 0;
     if (p->pagetable)
         proc_freepagetable(p->pagetable, p->sz);

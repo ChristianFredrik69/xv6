@@ -42,7 +42,7 @@ struct {
     struct run *freelist; // The linked list of free pages
 } kmem;
 
-int get_ref_index(void *pa) {
+int get_reference_count_index_for_physical_address(void *pa) {
   if ((uint64) pa < KERNBASE || (uint64) pa >= PHYSTOP) {
     return -1;
   }
@@ -50,16 +50,16 @@ int get_ref_index(void *pa) {
   return ((uint64) pa - KERNBASE) / PGSIZE;
 }
 
-void add_ref(void *pa) {
-  int index = get_ref_index(pa);
+void add_reference_count_for_physical_address(void *pa) {
+  int index = get_reference_count_index_for_physical_address(pa);
   if (index == -1) {
     return;
   }
   ref_count[index] = ref_count[index] + 1;
 }
 
-void dec_ref(void *pa) {
-  int index = get_ref_index(pa);
+void decrement_reference_count_for_physical_address(void *pa) {
+  int index = get_reference_count_index_for_physical_address(pa);
   if (index == -1) {
     return;
   }
@@ -142,7 +142,7 @@ kalloc(void) {
         memset((char *)r, 5, PGSIZE); // fill with junk
     }
     FREE_PAGES--; // Decrement the number of free pages
-    add_ref((void *)r);
+    add_reference_count_for_physical_address((void *)r);
     return (void *)r; // Return a pointer to the allocated page
 }
 

@@ -65,12 +65,6 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
   } else if (r_scause() == 15) {
-  // Modify usertrap() to recognize page faults.
-  // When a page-fault occurs on a COW page, allocate a new page with kalloc(),
-  // copy the old page to the new page,
-  // and install the new page in the PTE with PTE_W set.
-
-    // Get physial page address and correct flags.
     uint64 start_va = PGROUNDDOWN(r_stval());
     pte_t *pte;
     pte = walk(p->pagetable, start_va, 0);
@@ -87,7 +81,7 @@ usertrap(void)
       char *old_pa = (char *)PTE2PA(*pte);
       memmove(new_pa, old_pa, PGSIZE);
       uvmunmap(p->pagetable, start_va, 1, 0);
-      dec_ref(old_pa);
+      decrement_reference_count_for_physical_address(old_pa);
 
       if (mappages(p->pagetable, start_va, PGSIZE, (uint64)new_pa, flags) != 0) {
         panic("mappages");

@@ -464,14 +464,14 @@ sys_exec(void)
   int ret = exec(path, argv);
 
   for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
-    dec_ref(argv[i]);
+    decrement_reference_count_for_physical_address(argv[i]);
 
 
   return ret;
 
  bad:
   for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
-    dec_ref(argv[i]);
+    decrement_reference_count_for_physical_address(argv[i]);
   return -1;
 }
 
