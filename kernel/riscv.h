@@ -329,7 +329,6 @@ sfence_vma()
 
 typedef uint64 pte_t; // 8 bytes per page table entry and 4096 bytes per page. 4096 / 8 = 512
 typedef uint64 *pagetable_t; // 512 PTEs. PTE = Page Table Entry. 
-extern uint64 NUM_REFS[33000];
 extern char end[]; // first address after kernel, defined by kernel.ld
 
 #endif // __ASSEMBLER__

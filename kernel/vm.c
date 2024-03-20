@@ -185,7 +185,7 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
       panic("uvmunmap: not a leaf");
     if(do_free){
       uint64 pa = PTE2PA(*pte);
-      kfree((void*)pa);
+      dec_ref((void*)pa);
     }
     *pte = 0;
   }
@@ -240,7 +240,7 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)
     }
     memset(mem, 0, PGSIZE);
     if(mappages(pagetable, a, PGSIZE, (uint64)mem, PTE_R|PTE_U|xperm) != 0){
-      kfree(mem);
+      dec_ref(mem);
       uvmdealloc(pagetable, a, oldsz);
       return 0;
     }
@@ -283,7 +283,7 @@ freewalk(pagetable_t pagetable)
       panic("freewalk: leaf");
     }
   }
-  kfree((void*)pagetable);
+  dec_ref((void*)pagetable);
 }
 
 // Free user memory pages,
@@ -312,11 +312,8 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       panic("uvmcopy: pte should exist");
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
-    uint64 pa = PTE2PA(*pte);
-    printf("pa: %p, index: %d\n", pa, PA_INDEX(pa));
-    printf("NUM_REFS: %d\n", NUM_REFS[PA_INDEX(pa)]);
-    NUM_REFS[PA_INDEX(pa)]++; // Increment the reference count
     
+    uint64 pa = PTE2PA(*pte);
     uint flags = PTE_FLAGS(*pte);
     flags |= PTE_COW;
     flags &= (~PTE_W);
@@ -324,13 +321,13 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     if (mappages(new, i, PGSIZE, pa, flags) != 0) { // Map the page to the exact same location as the parent. Flags are different, child may only read.
         goto err;
     }
-
+    
+    add_ref((void*)pa);
     uvmunmap(old, i, 1, 0); // Unmap
     if (mappages(old, i, PGSIZE, pa, flags) != 0) { // Give the parent read-only permissions.
         goto err;
     }
 
-    printf("NUM_REFS: %d\n", NUM_REFS[PA_INDEX(pa)]); // debugz
     // Update: We are getting scause 0x0...0f, which is what we want.
     // I think this is good, since it means that the problem is (hopefully) only that we are trying to
     // write to a read-only page. In the best case scenario, we only need to implement copy-on-write,

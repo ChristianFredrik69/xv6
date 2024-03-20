@@ -200,7 +200,9 @@ void virtio_disk_intr(void);
 
 // va2pa
 uint64 va2pa(uint64 va, int pid);
-uint64 PA_INDEX(uint64 pa);
+int get_ref_index(void *pa);
+void add_ref(void *pa);
+void dec_ref(void *pa);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))

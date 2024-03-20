@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     */
    
     if (argc == 2) {
-        printf("0x%x\n", va2pa(va, getpid()));
+        printf("0x%x\n", va2pa(va, (int)0));
     }
     
     else {

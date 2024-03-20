@@ -45,30 +45,6 @@ usertrap(void)
 
   struct proc *p = myproc();
   p->trapframe->epc = r_sepc(); // save user program counter.
-  
-  // if(r_scause() == 15) { // Store/AMO page fault
-  //   printf("Inside scause 15\n");
-  //   uint64 fault_addr = PGROUNDDOWN(r_stval());
-  //   pte_t *pte = walk(p->pagetable, fault_addr, 0); // Walk the page table to find the PTE
-
-  //   if (pte && (*pte & PTE_V) && !(*pte & PTE_W)) {
-  //     char *new_pa = kalloc(); // Allocate a new page
-  //     if (new_pa == 0) {
-  //       panic("usertrap: out of memory\n");
-  //     }
-
-  //     printf("Allocated new page at %p\n", new_pa);
-
-  //     uint64 old_pa = PTE2PA(*pte);
-  //     memmove(new_pa, (char*)old_pa, PGSIZE);
-  //     uvmunmap(p->pagetable, fault_addr, 1, 0); // Unmap the old page, calls kfree at some point, so reference_count is decremented
-  //     *pte = PA2PTE((uint64)new_pa) | PTE_W | PTE_R; // Add read/write permissions to the new page
-  //     if (mappages(p->pagetable, fault_addr, PGSIZE, (uint64)new_pa, PTE_FLAGS(*pte)) != 0) { // Map the new page to the same location as the old page
-  //       panic("usertrap 15: mappages\n");
-  //     }
-  //     printf("NUM_REFS[PA_INDEX(old_pa)] = %d\n", NUM_REFS[PA_INDEX(old_pa)]);
-  //   }
-  // }
 
 
   if(r_scause() == 8){
@@ -101,10 +77,7 @@ usertrap(void)
     if (pte == 0) {
       printf("page not found\n");
       p->killed = 1;
-      panic("page not found\n");
     }
-    printf("usertrap(): page fault at address 0x%p\n", start_va);
-    printf("Page number = %d\n", PA_INDEX(PTE2PA(*pte)));
     if (pte && (*pte & PTE_V) && !(*pte & PTE_W) && (*pte & PTE_COW)) {
       uint flags = PTE_FLAGS(*pte);
       flags |= PTE_W;
@@ -114,13 +87,11 @@ usertrap(void)
       char *old_pa = (char *)PTE2PA(*pte);
       memmove(new_pa, old_pa, PGSIZE);
       uvmunmap(p->pagetable, start_va, 1, 0);
+      dec_ref(old_pa);
 
       if (mappages(p->pagetable, start_va, PGSIZE, (uint64)new_pa, flags) != 0) {
         panic("mappages");
       }
-      printf("\n--------------------\nInside usertrap\n--------------------\n");
-      printf("Number of references, new page: %d\n", NUM_REFS[PA_INDEX((uint64)new_pa)]);
-      printf("Number of references, old page: %d\n", NUM_REFS[PA_INDEX((uint64)old_pa)]);
     }
   }
 
