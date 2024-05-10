@@ -49,14 +49,14 @@ There are a lot of things which needed to be done to make the first handin work.
 
 When defining a user call, I needed to first make a file in the user space, and then
 I needed to add that file under the UPROGS in Makefile. I also needed to add the
-relevant headers to the c-file in the user space. There is no stdio.h in this
+relevant headers to the c-file in the user space. There is no `stdio.h` in this
 operating system, so if you need something like printf, you need to import
-the user.h file (as an example).
+the `user.h` file (as an example).
 
 ### Task2
 
 When defining a system call, we needed to go through several files.
-We started by defining the system call in syscall.h.
+We started by defining the system call in `syscall.h`.
 The exact code was:
 
 ```c
@@ -65,7 +65,7 @@ The exact code was:
 
 Here we are defining the name of the system call, and its corresponding ID.
 
-Next, we added these two lines in syscall.c:
+Next, we added these two lines in `syscall.c`:
 
 ```c
 extern uint64 sys_christian(void);
@@ -75,7 +75,7 @@ extern uint64 sys_christian(void);
 I am not sure what these are doing at the moment, but they are necessary, and
 I am just following the template from the other system calls at the moment.
 
-I then went to sysproc.c and added the following code:
+I then went to `sysproc.c` and added the following code:
 
 ```c
 int sys_christian(void)
@@ -87,22 +87,22 @@ int sys_christian(void)
 
 This is the actual code which is executed when the system call is called.
 The next step was to add the system call to the user space. I did this by
-adding the following code to the user.h file:
+adding the following code to the `user.h` file:
 
 ```c
 int christian(void);
 ```
 
-We also needed to add this line to the usys.pl file:
+We also needed to add this line to the `usys.pl` file:
 
-```c
+```perl
 entry(christian);
 ```
 
 Again, I am not sure what this does, but it is necessary, and
 the other system calls seem to follow the same pattern.
 
-Finally, I added my own user program, which calls the system call. The user program is called christian.c, and it was set up following the template from task 1.
+Finally, I added my own user program, which calls the system call. The user program is called `christian.c`, and it was set up following the template from task 1.
 
 The code is extremely simple, the whole file is:
 
