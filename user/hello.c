@@ -13,5 +13,5 @@ int main(int argc, char *argv[]) { // The standard main declaration
     } else {
         printf("Hello World\n");
     }
-    return christian(); // 0 usually means success
+    return 0; // 0 usually means success
 }
